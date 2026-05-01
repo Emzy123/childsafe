@@ -10,6 +10,25 @@ child-abuse-frontend/build/
 # Environment variables (sensitive)
 .env
 
+# MongoDB binary data files (machine-specific, not for version control)
+database/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+child-abuse-frontend/dist/
+child-abuse-frontend/build/
+
+# Environment variables (sensitive)
+.env
+
 # Logs
 *.log
 npm-debug.log*

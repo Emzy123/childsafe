@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+child-abuse-frontend/node_modules/
+
+# Build outputs
+dist/
+child-abuse-frontend/dist/
+child-abuse-frontend/build/
+
+# Environment variables (sensitive)
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

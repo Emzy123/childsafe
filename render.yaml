@@ -8,10 +8,8 @@ services:
     startCommand: npm run start:prod
     envVars:
       - key: JWT_SECRET
-        scope: build
         sync: false
       - key: MONGODB_URI
-        scope: build
         sync: false
       - key: FRONTEND_URL
         value: https://childsafe-frontend.onrender.com

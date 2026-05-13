@@ -11,6 +11,7 @@ import { AdminModule } from './admin/admin.module';
 import { SocialWorkerModule } from './social-worker/social-worker.module';
 import { LawEnforcementModule } from './law-enforcement/law-enforcement.module';
 import { databaseConfig } from './config/database.config';
+import { SeederModule } from './seeds/seeder.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { databaseConfig } from './config/database.config';
     AdminModule,
     SocialWorkerModule,
     LawEnforcementModule,
+    SeederModule,
   ],
   providers: [
     {

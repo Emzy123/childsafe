@@ -20,8 +20,6 @@ services:
       - key: FRONTEND_URL
         value: https://childsafe-frontend.onrender.com
     healthCheckPath: /api
-    disk:
-      size: 1 GB
 
   # Frontend Service (Static Site)
   - type: web

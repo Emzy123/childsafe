@@ -1,38 +1,35 @@
 # Dependencies
 node_modules/
-child-abuse-frontend/node_modules/
+*/node_modules/
 
 # Build outputs
 dist/
-child-abuse-frontend/dist/
-child-abuse-frontend/build/
+*/dist/
+build/
 
 # Environment variables (sensitive)
 .env
+.env.local
+.env.*.local
 
-# MongoDB binary data files (machine-specific, not for version control)
+# MongoDB binary data files (machine-specific)
 database/
 
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # Logs
 *.log
 npm-debug.log*
+yarn-error.log*
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Build outputs
-dist/
-child-abuse-frontend/dist/
-child-abuse-frontend/build/
-
-# Environment variables (sensitive)
-.env
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS
-.DS_Store
-Thumbs.db
+# Testing
+coverage/
+.nyc_output/

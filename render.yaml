@@ -19,11 +19,11 @@ services:
   - type: web
     name: childsafe-frontend
     runtime: static
-    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npx vite build --mode production
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://childsafe-api.onrender.com/api
+        value: https://childsafe-api-bidv.onrender.com/api
     routes:
       - type: rewrite
         source: /*

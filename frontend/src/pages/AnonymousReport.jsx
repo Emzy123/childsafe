@@ -20,7 +20,8 @@ import {
   CheckCircle,
   Info,
   Eye,
-  EyeOff
+  EyeOff,
+  FileText
 } from 'lucide-react';
 import { 
   Button, 
@@ -38,7 +39,9 @@ import {
 const victimSchema = z.object({
   fullName: z.string().optional().or(z.literal('')),
   nickname: z.string().optional().or(z.literal('')),
-  age: z.coerce.number().min(0).max(17).optional().or(z.literal('')),
+  age: z.string().min(1, 'Age is required').transform(Number).pipe(
+    z.number().min(0, 'Age must be at least 0').max(17, 'Victim must be a child (under 18)')
+  ),
   dateOfBirth: z.string().optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'non-binary', 'prefer_not_to_say']).optional().or(z.literal('')),
   residencyStatus: z.enum(['lives_with_parents', 'foster_care', 'street_child', 'orphanage', 'other']).optional().or(z.literal('')),
@@ -93,6 +96,8 @@ export default function AnonymousReport() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [victimPhoto, setVictimPhoto] = useState(null);
+  const [perpetratorPhoto, setPerpetratorPhoto] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   const totalSteps = 4;
@@ -224,13 +229,49 @@ export default function AnonymousReport() {
     setTimeout(() => setDraftSaved(false), 2000);
   };
 
+  const handleVictimPhotoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      const previewUrl = URL.createObjectURL(file);
+      setVictimPhoto({ file, previewUrl });
+      toast.success('Victim photo uploaded');
+    }
+  };
+
+  const handlePerpetratorPhotoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      const previewUrl = URL.createObjectURL(file);
+      setPerpetratorPhoto({ file, previewUrl });
+      toast.success('Perpetrator photo uploaded');
+    }
+  };
+
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
     if (files.length + selectedFiles.length > 10) {
       toast.error('Maximum 10 files allowed');
       return;
     }
-    setSelectedFiles(prev => [...prev, ...files]);
+    
+    const newFiles = files.map(file => {
+      let previewUrl = null;
+      if (file.type.startsWith('image/')) {
+        previewUrl = URL.createObjectURL(file);
+      }
+      return { file, previewUrl, name: file.name, size: file.size };
+    });
+    
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+    toast.success('Files uploaded');
   };
 
   const removeFile = (index) => {
@@ -334,19 +375,16 @@ export default function AnonymousReport() {
             </div>
             
             <div className="form-group">
-              <label className="form-label">Age (Optional)</label>
-              <div className="flex space-x-3">
-                <Select {...register('age')} error={errors.age?.message}>
-                  <option value="">Select Age</option>
-                  {[...Array(18)].map((_, i) => (
-                    <option key={i} value={i}>{i} years</option>
-                  ))}
-                </Select>
-                <Button variant="outline" size="sm">
-                  <HelpCircle className="h-4 w-4 mr-1" />
-                  Don't know exact age?
-                </Button>
-              </div>
+              <label className="form-label">Age <span className="text-red-500">*</span></label>
+              <Select {...register('age')} error={errors.age?.message}>
+                <option value="">Select Age</option>
+                {[...Array(18)].map((_, i) => (
+                  <option key={i} value={i}>{i} years</option>
+                ))}
+              </Select>
+              {errors.age && (
+                <p className="text-xs text-red-500 mt-1">{errors.age.message}</p>
+              )}
             </div>
             
             <div className="form-group">
@@ -419,23 +457,50 @@ export default function AnonymousReport() {
           
           <div className="form-group">
             <label className="form-label">Photo Upload (Optional)</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-sm text-gray-600 mb-2">
-                Upload photo (face-blurring AI recommended)
-              </p>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="victim-photo-upload"
-                onChange={handleFileUpload}
-              />
-              <label htmlFor="victim-photo-upload" className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                <Upload className="h-4 w-4 mr-2" />
-                Choose File
-              </label>
-            </div>
+            {victimPhoto ? (
+              <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={victimPhoto.previewUrl}
+                    alt="Victim preview"
+                    className="w-16 h-16 object-cover rounded-lg border border-green-200 shadow-sm"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-green-700 flex items-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      Uploaded
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">{victimPhoto.file.name}</p>
+                    <p className="text-xs text-gray-400">{(victimPhoto.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVictimPhoto(null)}
+                  className="text-sm text-red-500 hover:text-red-700 font-medium px-3 py-1 rounded hover:bg-red-50 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
+                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-sm text-gray-600 mb-2">
+                  Upload photo
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id="victim-photo-upload"
+                  onChange={handleVictimPhotoUpload}
+                />
+                <label htmlFor="victim-photo-upload" className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose File
+                </label>
+              </div>
+            )}
           </div>
         </CardBody>
       </Card>
@@ -619,21 +684,37 @@ export default function AnonymousReport() {
               </div>
               
               {selectedFiles.length > 0 && (
-                <div className="space-y-2">
-                  {selectedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Camera className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm font-medium">{file.name}</span>
-                        <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedFiles.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-3 min-w-0">
+                        {item.previewUrl ? (
+                          <img
+                            src={item.previewUrl}
+                            alt="attachment preview"
+                            className="w-12 h-12 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="truncate">
+                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                          <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
+                            <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                            Uploaded &bull; {(item.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
+                        type="button"
                         onClick={() => removeFile(index)}
+                        className="text-gray-400 hover:text-red-500 font-bold text-lg px-2 flex-shrink-0 transition-colors"
+                        aria-label="Remove file"
                       >
-                        ×
-                      </Button>
+                        &times;
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -785,21 +866,48 @@ export default function AnonymousReport() {
 
               <div className="form-group">
                 <label className="form-label">Photo Upload (Optional)</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 mb-2">Upload perpetrator photo</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    id="perpetrator-photo-upload"
-                    onChange={handleFileUpload}
-                  />
-                  <label htmlFor="perpetrator-photo-upload" className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose File
-                  </label>
-                </div>
+                {perpetratorPhoto ? (
+                  <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <img
+                        src={perpetratorPhoto.previewUrl}
+                        alt="Perpetrator preview"
+                        className="w-16 h-16 object-cover rounded-lg border border-green-200 shadow-sm"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-green-700 flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4" />
+                          Uploaded
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">{perpetratorPhoto.file.name}</p>
+                        <p className="text-xs text-gray-400">{(perpetratorPhoto.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPerpetratorPhoto(null)}
+                      className="text-sm text-red-500 hover:text-red-700 font-medium px-3 py-1 rounded hover:bg-red-50 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
+                    <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600 mb-2">Upload perpetrator photo</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="perpetrator-photo-upload"
+                      onChange={handlePerpetratorPhotoUpload}
+                    />
+                    <label htmlFor="perpetrator-photo-upload" className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose File
+                    </label>
+                  </div>
+                )}
               </div>
             </>
           )}

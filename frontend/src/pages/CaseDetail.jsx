@@ -277,7 +277,7 @@ export default function CaseDetail() {
           recommendations: ['Review case details'] 
         },
         nextActions: response.data.nextActions || ['Initial review'],
-        victim: response.data.victim || { 
+        victim: { 
           firstName: 'Unknown', 
           lastName: '', 
           approximateAge: 'Unknown', 
@@ -285,9 +285,10 @@ export default function CaseDetail() {
           school: 'Unknown', 
           medicalConditions: 'Unknown', 
           currentLocation: 'Unknown', 
-          protectionStatus: 'pending' 
+          protectionStatus: 'pending',
+          ...(response.data.victim || {})
         },
-        perpetrator: response.data.perpetrator || { 
+        perpetrator: { 
           firstName: 'Unknown', 
           lastName: '', 
           relationship: 'Unknown', 
@@ -295,7 +296,8 @@ export default function CaseDetail() {
           occupation: 'Unknown', 
           aliases: 'None', 
           criminalHistory: 'Unknown', 
-          currentStatus: 'unknown' 
+          currentStatus: 'unknown',
+          ...(response.data.perpetrator || {})
         }
       };
       
@@ -771,7 +773,7 @@ export default function CaseDetail() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">Protection Status</span>
                       <Badge className="bg-success/10 text-success border-success/20">
-                        {caseData.victim.protectionStatus.replace('_', ' ').toUpperCase()}
+                        {(caseData.victim.protectionStatus || 'pending').replace('_', ' ').toUpperCase()}
                       </Badge>
                     </div>
                     
@@ -866,7 +868,7 @@ export default function CaseDetail() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">Current Status</span>
                       <Badge className="bg-warning/10 text-warning border-warning/20">
-                        {caseData.perpetrator.currentStatus.replace('_', ' ').toUpperCase()}
+                        {(caseData.perpetrator.currentStatus || 'unknown').replace('_', ' ').toUpperCase()}
                       </Badge>
                     </div>
                     

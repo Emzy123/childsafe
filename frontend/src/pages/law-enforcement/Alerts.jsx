@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Search, Plus, AlertTriangle, Bell, Clock, CheckCircle, X } from 'lucide-react';
 
+
 export default function Alerts() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -15,19 +19,11 @@ export default function Alerts() {
 
   const fetchAlerts = async () => {
     try {
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
-        endpoint = '/law-enforcement/alerts';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/alerts';
-      } else {
-        endpoint = '/alerts';
-      }
-      
-      const response = await api.get(endpoint);
-      setAlerts(response.data);
+      const response = await api.get('/law-enforcement/alerts');
+      setAlerts(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching alerts:', error);
+      setError(error.response?.status === 403 ? 'Access denied: insufficient permissions.' : 'Failed to load alerts.');
     } finally {
       setLoading(false);
     }
@@ -99,6 +95,20 @@ export default function Alerts() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchAlerts} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -177,7 +187,7 @@ export default function Alerts() {
                     {alert.caseId && (
                       <div className="mt-3">
                         <button
-                          onClick={() => window.location.href = `/cases/${alert.caseId}`}
+                          onClick={() => navigate(`/cases/${alert.caseId}`)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                           View Case →

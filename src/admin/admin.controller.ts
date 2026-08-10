@@ -128,8 +128,15 @@ export class AdminController {
 
   // Audit Logs
   @Get('audit-logs')
-  async getAuditLogs(@Query('page') page?: number, @Query('limit') limit?: number, @Query('userId') userId?: string, @Query('action') action?: string) {
-    return this.adminService.getAuditLogs(page, limit, userId, action);
+  async getAuditLogs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('userId') userId?: string,
+    @Query('action') action?: string,
+  ) {
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 20;
+    return this.adminService.getAuditLogs(pageNum, limitNum, userId, action);
   }
 
   // Data Export

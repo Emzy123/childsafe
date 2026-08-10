@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Search, Plus, FileText, AlertTriangle, Clock } from 'lucide-react';
 
@@ -7,6 +8,7 @@ export default function Warrants() {
   const { user } = useAuth();
   const [warrants, setWarrants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -15,19 +17,16 @@ export default function Warrants() {
 
   const fetchWarrants = async () => {
     try {
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
+      let endpoint = '/warrants';
+      if (user?.role === 'law_enforcement' || user?.role === 'admin') {
         endpoint = '/law-enforcement/warrants';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/warrants';
-      } else {
-        endpoint = '/warrants';
       }
       
       const response = await api.get(endpoint);
-      setWarrants(response.data);
+      setWarrants(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching warrants:', error);
+      setError('Failed to load warrants.');
     } finally {
       setLoading(false);
     }
@@ -65,6 +64,18 @@ export default function Warrants() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchWarrants} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Retry</button>
+        </div>
       </div>
     );
   }
@@ -136,7 +147,7 @@ export default function Warrants() {
                 <tr
                   key={warrant.id}
                   className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => window.location.href = `/law-enforcement/warrants/${warrant.id}`}
+                  onClick={() => navigate(`/law-enforcement/warrants/${warrant.id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
                     {warrant.id}

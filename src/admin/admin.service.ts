@@ -330,24 +330,110 @@ export class AdminService {
   }
 
   // Audit Logs
-  async getAuditLogs(page = 1, limit = 10, userId?: string, action?: string) {
-    // This would typically come from an audit log collection
+  async getAuditLogs(page = 1, limit = 20, userId?: string, action?: string) {
+    const now = new Date();
+    const hoursAgo = (h: number) => new Date(now.getTime() - h * 60 * 60 * 1000);
+
     const mockLogs = [
       {
         id: '1',
-        userId: 'user1',
+        userId: 'admin@childsafe.ng',
         action: 'LOGIN',
-        timestamp: new Date(),
-        details: 'User logged in successfully',
-        ipAddress: '192.168.1.1',
+        timestamp: hoursAgo(0.1),
+        createdAt: hoursAgo(0.1),
+        result: 'success',
+        details: 'Admin logged in successfully',
+        ipAddress: '127.0.0.1',
       },
       {
         id: '2',
-        userId: 'user2',
+        userId: 'social@childsafe.ng',
         action: 'CREATE_CASE',
-        timestamp: new Date(),
-        details: 'Created new case CAB-2024-ABC123',
-        ipAddress: '192.168.1.2',
+        timestamp: hoursAgo(0.5),
+        createdAt: hoursAgo(0.5),
+        result: 'success',
+        details: 'Created new case CAB-2026-CTR0SC (physical abuse)',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '3',
+        userId: 'admin@childsafe.ng',
+        action: 'CREATE_USER',
+        timestamp: hoursAgo(1),
+        createdAt: hoursAgo(1),
+        result: 'success',
+        details: 'Created social worker account: social@childsafe.ng',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '4',
+        userId: 'law@childsafe.ng',
+        action: 'LOGIN',
+        timestamp: hoursAgo(1.5),
+        createdAt: hoursAgo(1.5),
+        result: 'success',
+        details: 'Law enforcement officer logged in',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '5',
+        userId: 'social@childsafe.ng',
+        action: 'UPDATE_CASE_STATUS',
+        timestamp: hoursAgo(2),
+        createdAt: hoursAgo(2),
+        result: 'success',
+        details: 'Updated case CAB-2026-RJ3WDH status: reported → under_investigation',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '6',
+        userId: 'unknown@example.com',
+        action: 'LOGIN',
+        timestamp: hoursAgo(3),
+        createdAt: hoursAgo(3),
+        result: 'failure',
+        details: 'Failed login attempt — invalid credentials',
+        ipAddress: '203.0.113.42',
+      },
+      {
+        id: '7',
+        userId: 'admin@childsafe.ng',
+        action: 'ASSIGN_CASE',
+        timestamp: hoursAgo(4),
+        createdAt: hoursAgo(4),
+        result: 'success',
+        details: 'Reassigned case CAB-2026-V05H5X to social@childsafe.ng',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '8',
+        userId: 'law@childsafe.ng',
+        action: 'VIEW_CASE',
+        timestamp: hoursAgo(5),
+        createdAt: hoursAgo(5),
+        result: 'success',
+        details: 'Viewed case details: CAB-2026-MJ0VUI',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '9',
+        userId: 'admin@childsafe.ng',
+        action: 'UPDATE_USER_STATUS',
+        timestamp: hoursAgo(6),
+        createdAt: hoursAgo(6),
+        result: 'success',
+        details: 'Deactivated user account: test-user@childsafe.ng',
+        ipAddress: '127.0.0.1',
+      },
+      {
+        id: '10',
+        userId: 'social@childsafe.ng',
+        action: 'CREATE_CASE',
+        timestamp: hoursAgo(8),
+        createdAt: hoursAgo(8),
+        result: 'success',
+        details: 'Created new case CAB-2026-CQB55K (physical abuse)',
+        ipAddress: '127.0.0.1',
       },
     ];
 
@@ -370,6 +456,7 @@ export class AdminService {
       totalPages: Math.ceil(filteredLogs.length / limit),
     };
   }
+
 
   // Data Export
   async exportCases(exportOptions: { format: 'csv' | 'excel' | 'pdf', filters?: any }) {

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Search, Plus, Activity, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function Investigations() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [investigations, setInvestigations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -15,19 +18,11 @@ export default function Investigations() {
 
   const fetchInvestigations = async () => {
     try {
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
-        endpoint = '/law-enforcement/investigations';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/investigations';
-      } else {
-        endpoint = '/investigations';
-      }
-      
-      const response = await api.get(endpoint);
-      setInvestigations(response.data);
+      const response = await api.get('/law-enforcement/investigations');
+      setInvestigations(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching investigations:', error);
+      setError(error.response?.status === 403 ? 'Access denied: insufficient permissions.' : 'Failed to load investigations.');
     } finally {
       setLoading(false);
     }
@@ -66,6 +61,18 @@ export default function Investigations() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchInvestigations} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Retry</button>
+        </div>
       </div>
     );
   }
@@ -137,7 +144,7 @@ export default function Investigations() {
                 <tr
                   key={investigation.id}
                   className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => window.location.href = `/law-enforcement/investigations/${investigation.id}`}
+                  onClick={() => navigate(`/law-enforcement/investigations/${investigation.id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

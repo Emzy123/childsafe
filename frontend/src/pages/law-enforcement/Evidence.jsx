@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Search, Plus, FileText, Download, Eye, Calendar } from 'lucide-react';
 
@@ -7,6 +8,7 @@ export default function Evidence() {
   const { user } = useAuth();
   const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -16,27 +18,23 @@ export default function Evidence() {
   const fetchEvidence = async () => {
     try {
       // Since evidence is case-specific, we'll fetch all cases and their evidence
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
+      let endpoint = '/cases';
+      if (user?.role === 'law_enforcement' || user?.role === 'admin') {
         endpoint = '/law-enforcement/cases';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/cases';
-      } else {
-        endpoint = '/cases';
       }
       
       const response = await api.get(endpoint);
-      const cases = response.data;
+      const cases = Array.isArray(response.data) ? response.data : [];
       
       // Fetch evidence for each case
       const allEvidence = [];
       for (const caseItem of cases) {
         try {
-          const evidenceResponse = await api.get(`/law-enforcement/cases/${caseItem.id}/evidence`);
-          const caseEvidence = evidenceResponse.data.map(evidence => ({
+          const evidenceResponse = await api.get(`/law-enforcement/cases/${caseItem._id || caseItem.id}/evidence`);
+          const caseEvidence = (Array.isArray(evidenceResponse.data) ? evidenceResponse.data : []).map(evidence => ({
             ...evidence,
             caseRef: caseItem.caseRef,
-            caseId: caseItem.id
+            caseId: caseItem._id || caseItem.id
           }));
           allEvidence.push(...caseEvidence);
         } catch (error) {
@@ -48,6 +46,7 @@ export default function Evidence() {
       setEvidence(allEvidence);
     } catch (error) {
       console.error('Error fetching evidence:', error);
+      setError('Failed to load evidence.');
     } finally {
       setLoading(false);
     }
@@ -79,6 +78,18 @@ export default function Evidence() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchEvidence} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Retry</button>
+        </div>
       </div>
     );
   }

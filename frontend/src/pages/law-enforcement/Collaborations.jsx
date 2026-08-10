@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Search, Plus, Users, Calendar, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
@@ -7,6 +8,7 @@ export default function Collaborations() {
   const { user } = useAuth();
   const [collaborations, setCollaborations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -15,19 +17,16 @@ export default function Collaborations() {
 
   const fetchCollaborations = async () => {
     try {
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
+      let endpoint = '/collaborations';
+      if (user?.role === 'law_enforcement' || user?.role === 'admin') {
         endpoint = '/law-enforcement/collaborations';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/collaborations';
-      } else {
-        endpoint = '/collaborations';
       }
       
       const response = await api.get(endpoint);
-      setCollaborations(response.data);
+      setCollaborations(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching collaborations:', error);
+      setError('Failed to load collaborations.');
     } finally {
       setLoading(false);
     }
@@ -56,6 +55,18 @@ export default function Collaborations() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchCollaborations} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Retry</button>
+        </div>
       </div>
     );
   }
@@ -124,7 +135,7 @@ export default function Collaborations() {
                 <tr
                   key={collaboration.id}
                   className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => window.location.href = `/law-enforcement/collaborations/${collaboration.id}`}
+                  onClick={() => navigate(`/law-enforcement/collaborations/${collaboration.id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -156,7 +167,7 @@ export default function Collaborations() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      {new Date(collaboration.createdAt).toLocaleDateString()}
+                      {collaboration.createdAt ? new Date(collaboration.createdAt).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
                 </tr>
@@ -231,7 +242,7 @@ export default function Collaborations() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500">
-                  {new Date(collaboration.createdAt).toLocaleDateString()}
+                  {collaboration.createdAt ? new Date(collaboration.createdAt).toLocaleDateString() : 'N/A'}
                 </p>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(collaboration.status)}`}>
                   {collaboration.status}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Search, Plus, FileText, Download, Eye, Calendar, Filter } from 'lucide-react';
 
@@ -7,6 +8,7 @@ export default function Reports() {
   const { user } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -16,19 +18,16 @@ export default function Reports() {
 
   const fetchReports = async () => {
     try {
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
+      let endpoint = '/reports';
+      if (user?.role === 'law_enforcement' || user?.role === 'admin') {
         endpoint = '/law-enforcement/reports';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/reports';
-      } else {
-        endpoint = '/reports';
       }
       
       const response = await api.get(endpoint);
-      setReports(response.data);
+      setReports(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching reports:', error);
+      setError('Failed to load reports.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +68,18 @@ export default function Reports() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchReports} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Retry</button>
+        </div>
       </div>
     );
   }
@@ -151,7 +162,7 @@ export default function Reports() {
                 <tr
                   key={report.id}
                   className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => window.location.href = `/law-enforcement/reports/${report.id}`}
+                  onClick={() => navigate(`/law-enforcement/reports/${report.id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -176,13 +187,13 @@ export default function Reports() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                      {report.status.replace('_', ' ')}
+                      {(report.status || 'draft').replace('_', ' ')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      {new Date(report.createdAt).toLocaleDateString()}
+                      {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -191,7 +202,7 @@ export default function Reports() {
                         className="text-blue-600 hover:text-blue-800"
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.location.href = `/law-enforcement/reports/${report.id}`;
+                          navigate(`/law-enforcement/reports/${report.id}`);
                         }}
                       >
                         <Eye className="h-4 w-4" />

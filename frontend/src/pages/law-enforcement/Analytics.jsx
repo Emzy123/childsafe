@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { TrendingUp, TrendingDown, Activity, Clock, Users, Target, BarChart3 } from 'lucide-react';
 
@@ -7,6 +8,7 @@ export default function Analytics() {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchAnalytics();
@@ -14,19 +16,16 @@ export default function Analytics() {
 
   const fetchAnalytics = async () => {
     try {
-      let endpoint;
-      if (user?.role === 'law_enforcement') {
+      let endpoint = '/analytics';
+      if (user?.role === 'law_enforcement' || user?.role === 'admin') {
         endpoint = '/law-enforcement/analytics';
-      } else if (user?.role === 'admin') {
-        endpoint = '/admin/analytics';
-      } else {
-        endpoint = '/analytics';
       }
       
       const response = await api.get(endpoint);
       setAnalytics(response.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      setError('Failed to load analytics.');
     } finally {
       setLoading(false);
     }
@@ -36,6 +35,18 @@ export default function Analytics() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-medium text-red-700">{error}</p>
+          <button onClick={fetchAnalytics} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Retry</button>
+        </div>
       </div>
     );
   }

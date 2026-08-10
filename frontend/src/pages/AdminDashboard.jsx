@@ -79,7 +79,7 @@ export default function AdminDashboard() {
       if (healthRes.status === 'fulfilled') setSystemHealth(healthRes.value.data);
       if (logsRes.status === 'fulfilled') {
         const data = logsRes.value.data;
-        setAuditLogs(Array.isArray(data) ? data : (data?.data || []));
+        setAuditLogs(Array.isArray(data) ? data : (data?.logs || data?.data || []));
       }
     } catch (err) {
       console.error('Admin dashboard fetch error:', err);
@@ -336,13 +336,17 @@ export default function AdminDashboard() {
       {selectedModule === 'audit' && (
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold">Audit Logs</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Audit Logs</h3>
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{auditLogs.length} entries</span>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             {auditLogs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <FileText className="h-12 w-12 mb-3 opacity-40" />
-                <p>No audit logs available</p>
+                <p className="font-medium">No audit logs available</p>
+                <p className="text-sm mt-1">System activity will appear here</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -351,27 +355,46 @@ export default function AdminDashboard() {
                     <tr>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Action</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">User</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Details</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Timestamp</th>
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Result</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {auditLogs.slice(0, 20).map((log, idx) => (
-                      <tr key={log.id || idx} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 text-sm font-medium text-gray-800">{log.action || log.type || '—'}</td>
-                        <td className="px-6 py-3 text-sm text-gray-600">{log.userId || log.user || '—'}</td>
-                        <td className="px-6 py-3 text-sm text-gray-500">
-                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}
-                        </td>
-                        <td className="px-6 py-3">
-                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                            log.result === 'success' ? 'bg-success/10 text-success' : 'bg-critical/10 text-critical'
-                          }`}>
-                            {log.result || 'N/A'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {auditLogs.slice(0, 20).map((log, idx) => {
+                      const actionColors = {
+                        LOGIN: 'bg-blue-100 text-blue-700',
+                        CREATE_CASE: 'bg-purple-100 text-purple-700',
+                        CREATE_USER: 'bg-indigo-100 text-indigo-700',
+                        UPDATE_CASE_STATUS: 'bg-yellow-100 text-yellow-700',
+                        ASSIGN_CASE: 'bg-orange-100 text-orange-700',
+                        UPDATE_USER_STATUS: 'bg-gray-200 text-gray-700',
+                        VIEW_CASE: 'bg-teal-100 text-teal-700',
+                      };
+                      const actionColor = actionColors[log.action] || 'bg-gray-100 text-gray-600';
+                      const isFailure = log.result === 'failure';
+                      return (
+                        <tr key={log.id || idx} className={`hover:bg-gray-50 ${isFailure ? 'bg-red-50' : ''}`}>
+                          <td className="px-6 py-3">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${actionColor}`}>
+                              {(log.action || log.type || '—').replace(/_/g, ' ')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-700 font-medium">{log.userId || log.user || '—'}</td>
+                          <td className="px-6 py-3 text-sm text-gray-500 max-w-xs truncate" title={log.details}>{log.details || '—'}</td>
+                          <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">
+                            {log.timestamp || log.createdAt ? new Date(log.timestamp || log.createdAt).toLocaleString() : '—'}
+                          </td>
+                          <td className="px-6 py-3">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              isFailure ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                            }`}>
+                              {log.result || 'success'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -379,6 +402,7 @@ export default function AdminDashboard() {
           </CardBody>
         </Card>
       )}
+
     </div>
   );
 }

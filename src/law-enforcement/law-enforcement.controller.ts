@@ -7,7 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 
 @Controller('law-enforcement')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.LAW_ENFORCEMENT)
+@Roles(UserRole.LAW_ENFORCEMENT, UserRole.ADMIN)
 export class LawEnforcementController {
   constructor(private lawEnforcementService: LawEnforcementService) {}
 
